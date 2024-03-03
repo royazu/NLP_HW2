@@ -1,14 +1,11 @@
 from gensim.models import Word2Vec
-import gensim
-from gensim import downloader
 import re
 import numpy as np
 from sklearn.svm import SVC
-import torch
 import string
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.preprocessing import MultiLabelBinarizer, StandardScaler
-from sklearn.model_selection import GridSearchCV
+
 
 
 
@@ -83,7 +80,7 @@ def extract_features(scentences, model):
         features.append(np.mean(representation, axis=0))
     return features
     
-
+# Create and train the model
 svc_model = SVC(kernel='poly', C=10, gamma=0.1, degree=3, coef0=1, probability=True, class_weight='balanced')
 scalar = StandardScaler()
 train_features = extract_features(train_scentences, model)
@@ -93,78 +90,9 @@ if len(train_features) < len(train_labels):
 svc_model.fit(train_features, train_labels)
 dev_features = extract_features(dev_scentences, model)
 dev_features = scalar.fit_transform(dev_features)
+
+# Predict the labels
 dev_predictions = svc_model.predict(dev_features)
-print(dev_predictions)
+
+# Print the F1 score
 print(f'f1 score: {f1_score(dev_labels[:len(dev_predictions)], dev_predictions)}')
-
-
-
-
-from sklearn.metrics import accuracy_score, f1_score
-from torch.utils.data import DataLoader
-
-
-def train(model, data_sets, optimizer, num_epochs: int, batch_size=16):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    data_loaders = {"train": DataLoader(data_sets["train"], batch_size=batch_size, shuffle=True),
-                    "test": DataLoader(data_sets["test"], batch_size=batch_size, shuffle=False)}
-    model.to(device)
-
-    best_acc = 0.0
-
-    for epoch in range(num_epochs):
-        print(f'Epoch {epoch + 1}/{num_epochs}')
-        print('-' * 10)
-
-        for phase in ['train', 'test']:
-            if phase == 'train':
-                model.train()
-            else:
-                model.eval()
-
-            running_loss = 0.0
-            labels, preds = [], []
-
-            for batch in data_loaders[phase]:
-                batch_size = 0
-                for k, v in batch.items():
-                    batch[k] = v.to(device)
-                    batch_size = v.shape[0]
-
-                optimizer.zero_grad()
-                if phase == 'train':
-                    outputs, loss = model(**batch)
-                    loss.backward()
-                    optimizer.step()
-                else:
-                    with torch.no_grad():
-                        outputs, loss = model(**batch)
-                pred = outputs.argmax(dim=-1).clone().detach().cpu()
-                labels += batch['labels'].cpu().view(-1).tolist()
-                preds += pred.view(-1).tolist()
-                running_loss += loss.item() * batch_size
-
-            epoch_loss = running_loss / len(data_sets[phase])
-            epoch_acc = accuracy_score(labels, preds)
-
-            epoch_acc = round(epoch_acc, 5)
-
-            if phase.title() == "test":
-                print(f'{phase.title()} Loss: {epoch_loss:.4e} Accuracy: {epoch_acc}')
-            else:
-                print(f'{phase.title()} Loss: {epoch_loss:.4e} Accuracy: {epoch_acc}')
-            if phase == 'test' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                with open('model.pkl', 'wb') as f:
-                    torch.save(model, f)
-        print()
-
-    print(f'Best Validation Accuracy: {best_acc:4f}')
-
-
-
-
-
-
-        
-
