@@ -8,11 +8,9 @@ from sklearn.preprocessing import MultiLabelBinarizer, StandardScaler
 
 
 
-
+# list of items to filter from the dataset
 STOP_WORDS = ['a', 'an', 'the', 'in', 'on', 'at', 'to', 'of', 'by', 'and', 'or', 'for', 'with', 'is', 'are', 'was', 'were', 'am', 'do', 'does', 'did', 'has', 'have', 'had', 'can', 'could', 'will', 'shall', 'may', 'might', 'must', 'should']
 PUNCTUATION = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~']
-WORD_2_VEC_PATH = 'word2vec-google-news-300'
-GLOVE_PATH = 'glove-twitter-200'
 
 # check if a word contains punctuation
 def has_punctuation(word):
